@@ -1,12 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>＊グエンタインゴックの天才ブログ＊</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
 </head>
 <body>
-　　　<h1>初めまして、毎日楽しく生きたい系ブロガーです。</h1>
-　　　<p>毎日投稿できるように応援してね！！！
+    <header>
+        <h1>＊グエンタインゴックの天才ブログ＊</h1>
+        <p>初めまして、毎日楽しく生きたい系ブロガーです。毎日投稿できるように応援してね！！！</p>
+    </header>
+
+    <main>
+        <section id="new-post">
+            <h2>✨ 新しい投稿を作成 ✨</h2>
+            <form id="post-form">
+                <label for="content">投稿内容:</label>
+                <textarea id="content" placeholder="かわいいことを書いてね... 💕"></textarea>
+                
+                <label for="image">画像を選択:</label>
+                <input type="file" id="image" accept="image/*">
+                
+                <button type="submit">投稿する ✨</button>
+            </form>
+        </section>
+
+        <section id="posts">
+            <h2>📝 投稿一覧</h2>
+            <div id="posts-container">
+                <!-- Posts sẽ được thêm vào đây -->
+            </div>
+        </section>
+    </main>
+
+    <script src="function.js"></script>
 </body>
 </html>
