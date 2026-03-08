@@ -25,6 +25,9 @@
                 <label for="image">画像を選択:</label>
                 <input type="file" id="image" accept="image/*">
                 
+                <label for="password">Password:</label>
+                <input type="password" id="password" placeholder="Enter password to post" required>
+                
                 <button type="submit">投稿する ✨</button>
             </form>
         </section>
@@ -37,6 +40,8 @@
         </section>
     </main>
 
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
     <script src="function.js"></script>
 </body>
 </html>

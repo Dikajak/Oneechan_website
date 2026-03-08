@@ -1,9 +1,34 @@
+// Firebase config - replace with your Firebase project config
+const firebaseConfig = {
+    apiKey: "your-api-key",
+    authDomain: "your-project.firebaseapp.com",
+    projectId: "your-project-id",
+    storageBucket: "your-project.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "your-app-id"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const PASSWORD = 'admin'; // Change this to your desired password for posting and deleting
+
 document.addEventListener('DOMContentLoaded', function() {
     const postForm = document.getElementById('post-form');
     const postsContainer = document.getElementById('posts-container');
 
-    // Load existing posts from localStorage
-    let posts = JSON.parse(localStorage.getItem('blogPosts')) || [];
+    let posts = [];
+
+    // Load existing posts from Firestore
+    async function loadPosts() {
+        const querySnapshot = await db.collection('posts').orderBy('id', 'desc').get();
+        posts = [];
+        querySnapshot.forEach((doc) => {
+            posts.push({ id: doc.id, ...doc.data() });
+        });
+        renderPosts();
+    }
 
     // Render all posts
     function renderPosts() {
@@ -29,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p>${post.content}</p>
                 ${post.image ? `<img src="${post.image}" alt="Uploaded image">` : ''}
                 <div class="post-actions">
-                    <button class="like-btn" data-index="${index}">❤️ ${post.likes}</button>
+                    <button class="like-btn" data-index="${index}">❤️ ${post.likes || 0}</button>
                     <button class="delete-btn" data-index="${index}">🗑️ 削除</button>
                 </div>
                 <div class="comments-section">
@@ -46,28 +71,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Initial render
-    renderPosts();
+    // Initial load
+    loadPosts();
 
     // Handle delete button clicks
-    postsContainer.addEventListener('click', function(e) {
+    postsContainer.addEventListener('click', async function(e) {
         if (e.target.classList.contains('delete-btn')) {
             const index = e.target.getAttribute('data-index');
-            if (confirm('この投稿を削除してもいいですか？💔')) {
-                posts.splice(index, 1);
-                localStorage.setItem('blogPosts', JSON.stringify(posts));
-                renderPosts();
+            const enteredPassword = prompt('Enter password to delete:');
+            if (enteredPassword === PASSWORD) {
+                if (confirm('この投稿を削除してもいいですか？💔')) {
+                    await db.collection('posts').doc(posts[index].id).delete();
+                    loadPosts();
+                }
+            } else {
+                alert('Incorrect password');
             }
         } else if (e.target.classList.contains('like-btn')) {
             const index = e.target.getAttribute('data-index');
-            posts[index].likes += 1;
-            localStorage.setItem('blogPosts', JSON.stringify(posts));
-            renderPosts();
+            const postRef = db.collection('posts').doc(posts[index].id);
+            await postRef.update({
+                likes: (posts[index].likes || 0) + 1
+            });
+            loadPosts();
         }
     });
 
     // Handle comment submission
-    postsContainer.addEventListener('submit', function(e) {
+    postsContainer.addEventListener('submit', async function(e) {
         if (e.target.classList.contains('comment-form')) {
             e.preventDefault();
             const form = e.target;
@@ -76,48 +107,50 @@ document.addEventListener('DOMContentLoaded', function() {
             const text = form.querySelector('.comment-text').value.trim();
 
             if (name && text) {
-                if (!posts[index].comments) {
-                    posts[index].comments = [];
-                }
-                posts[index].comments.push({
+                const postRef = db.collection('posts').doc(posts[index].id);
+                const updatedComments = [...(posts[index].comments || []), {
                     name: name,
                     text: text,
                     date: new Date().toISOString()
-                });
-                localStorage.setItem('blogPosts', JSON.stringify(posts));
-                renderPosts();
+                }];
+                await postRef.update({ comments: updatedComments });
+                loadPosts();
             }
         }
     });
 
     // Handle form submission
-    postForm.addEventListener('submit', function(e) {
+    postForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const content = document.getElementById('content').value.trim();
         const imageFile = document.getElementById('image').files[0];
+        const password = document.getElementById('password').value;
+        
+        if (password !== PASSWORD) {
+            alert('Incorrect password');
+            return;
+        }
         
         if (!content && !imageFile) {
             alert('内容を書くか画像を選んでね！💕');
             return;
         }
         
-        const post = { id: Date.now(), content: content || '', image: '', likes: 0 };
+        const post = { id: Date.now(), content: content || '', image: '', likes: 0, comments: [] };
         
         if (imageFile) {
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 post.image = e.target.result;
-                posts.unshift(post); // Add to beginning
-                localStorage.setItem('blogPosts', JSON.stringify(posts));
-                renderPosts();
+                await db.collection('posts').add(post);
+                loadPosts();
                 postForm.reset();
             };
             reader.readAsDataURL(imageFile);
         } else {
-            posts.unshift(post);
-            localStorage.setItem('blogPosts', JSON.stringify(posts));
-            renderPosts();
+            await db.collection('posts').add(post);
+            loadPosts();
             postForm.reset();
         }
     });
